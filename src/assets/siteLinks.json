@@ -5,14 +5,19 @@
     "link": "https://blog.tx88.eu.org/"
   },
   {
-    "icon": "Edge",
-    "name": "Bing",
-    "link": "https://bing.tx88.eu.org/"
+    "icon": "Fire",
+    "name": "今日热榜",
+    "link": "https://dailyhot.tx88.eu.org/"
   },
   {
     "icon": "CompactDisc",
     "name": "音乐",
     "link": "https://music.tx88.eu.org/"
+  },
+  {
+    "icon": "Signature",
+    "name": "新解",
+    "link": "https://hyxj.tx88.eu.org/"
   },
   {
     "icon": "Magic",
@@ -25,9 +30,9 @@
     "link": "https://newapi.tx88.eu.org/"
   },
   {
-    "icon": "Fire",
-    "name": "今日热榜",
-    "link": "https://dailyhot.tx88.eu.org/"
+    "icon": "Edge",
+    "name": "Bing",
+    "link": "https://bing.tx88.eu.org/"
   },
   {
     "icon": "LaptopCode",
