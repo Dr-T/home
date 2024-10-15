@@ -43,7 +43,7 @@
 <script setup>
 import { Icon } from "@vicons/utils";
 // 可前往 https://www.xicons.org 自行挑选并在此处引入
-import { Link, Blog, CompactDisc, Edge, Magic, Atom, Fire, Signature, LaptopCode } from "@vicons/fa"; // 注意使用正确的类别
+import { Link, Blog, CompactDisc, Edge, Magic, Atom, Fire, Signature, LaptopCode, Asterisk, AddressCardRegular } from "@vicons/fa"; // 注意使用正确的类别
 import { mainStore } from "@/store";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import { Pagination, Mousewheel } from "swiper/modules";
@@ -71,6 +71,8 @@ const siteIcon = {
   Atom,
   Fire,
   LaptopCode,
+  Asterisk,
+  AddressCardRegular,
 };
 
 // 链接跳转
