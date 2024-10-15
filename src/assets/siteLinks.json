@@ -33,6 +33,16 @@
     "icon": "Edge",
     "name": "Bing",
     "link": "https://bing.tx88.eu.org/"
+  }, 
+  {
+    "icon": "Asterisk",
+    "name": "Claude",
+    "link": "https://claude.tx88.eu.org/"
+  },
+  {
+    "icon": "AddressCardRegular",
+    "name": "随机身份",
+    "link": "https://address.tx88.eu.org/"
   },
   {
     "icon": "LaptopCode",
