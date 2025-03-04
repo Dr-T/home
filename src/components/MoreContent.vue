@@ -1,5 +1,5 @@
 <template>
-  <div class="more-content">您可在此编写任意内容</div>
+  <div class="more-content">让AI专注提升效率，我们更多关注生活</div>
 </template>
 
 <style lang="scss" scoped>
