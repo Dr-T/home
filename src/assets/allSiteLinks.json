@@ -1,0 +1,60 @@
+{
+  "AI": [
+    {
+      "name": "ChatGPT",
+      "link": "https://chat.openai.com/",
+      "icon": "Magic"
+    },
+    {
+      "name": "Midjourney",
+      "link": "https://www.midjourney.com/",
+      "icon": "Signature"
+    },
+    {
+      "name": "GitHub Copilot",
+      "link": "https://github.com/features/copilot",
+      "icon": "LaptopCode"
+    }
+  ],
+  "生活": [
+    {
+      "name": "哔哩哔哩",
+      "link": "https://www.bilibili.com/",
+      "icon": "Blog"
+    },
+    {
+      "name": "YouTube",
+      "link": "https://www.youtube.com/",
+      "icon": "CompactDisc"
+    },
+    {
+      "name": "稀土掘金",
+      "link": "https://juejin.cn/",
+      "icon": "Fire"
+    }
+  ],
+  "效率": [
+    {
+      "name": "Google",
+      "link": "https://www.google.com/",
+      "icon": "Edge"
+    },
+    {
+      "name": "GitHub",
+      "link": "https://github.com/",
+      "icon": "Atom"
+    },
+    {
+      "name": "Vercel",
+      "link": "https://vercel.com/",
+      "icon": "Asterisk"
+    }
+  ],
+  "其他": [
+    {
+      "name": "个人主页",
+      "link": "https://www.txtx.me/",
+      "icon": "AddressCardRegular"
+    }
+  ]
+}
