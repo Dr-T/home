@@ -58,11 +58,14 @@ export default async function handler(request, response) {
       }
     }
     
+    // Filter out records with 'offline' status before returning.
+    const filteredRecords = allRecords.filter(record => record.status !== 'offline');
+
     // Set cache headers to improve performance and reduce API calls on Vercel.
     response.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=86400');
     
-    // Return data in the same format as the original API, but with the complete list.
-    return response.status(200).json({ list: allRecords });
+    // Return data in the same format as the original API, but with the filtered list.
+    return response.status(200).json({ list: filteredRecords });
 
   } catch (error) {
     console.error('Error fetching from NocoDB via proxy:', error);

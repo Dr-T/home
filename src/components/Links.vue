@@ -25,14 +25,17 @@
       }"
       :mousewheel="true"
     >
-      <SwiperSlide v-for="site in siteLinksList" :key="site">
+    <SwiperSlide v-for="site in siteLinksList" :key="site">
         <el-row class="link-all" :gutter="20">
           <el-col v-for="(item, index) in site" :span="8" :key="item">
             <div
               class="item cards"
               :style="index < 3 ? 'margin-bottom: 20px' : null"
               @click="jumpLink(item)"
+              @mouseenter="showTooltip($event, item)"
+              @mouseleave="hideTooltip"
             >
+              <div v-if="item.status" :class="['status-badge', `status-${item.status}`]"></div>
               <Icon size="26">
                 <component :is="siteIcon[item.icon]" />
               </Icon>
@@ -70,19 +73,29 @@
                 v-for="tab in Object.keys(allSiteLinks)"
                 :key="tab"
                 :class="{ tab: true, active: activeTab === tab }"
-                @click="activeTab = tab"
+                @click="handleTabClick(tab)"
               >
                 {{ tab }}
               </div>
             </div>
             <div class="content">
-              <el-row class="link-all" :gutter="20">
+              <div v-if="protectedGroups.includes(activeTab) && !unlockedGroups.includes(activeTab)" class="locked-content">
+                <Icon size="48"><component :is="siteIcon.AddressCardRegular" /></Icon>
+                <p>此分组内容已被保护</p>
+              </div>
+              <el-row v-else class="link-all" :gutter="20">
                 <el-col
                   v-for="item in allSiteLinks[activeTab]"
                   :key="item"
                   :span="8"
                 >
-                  <div class="item cards" @click="jumpLink(item)">
+                  <div
+                    class="item cards"
+                    @click="jumpLink(item)"
+                    @mouseenter="showTooltip($event, item)"
+                    @mouseleave="hideTooltip"
+                  >
+                    <div v-if="item.status" :class="['status-badge', `status-${item.status}`]"></div>
                     <Icon size="26">
                       <component :is="siteIcon[item.icon]" />
                     </Icon>
@@ -95,25 +108,40 @@
         </div>
       </div>
     </Transition>
+    <!-- Password Modal -->
+    <Transition name="fade">
+      <div v-if="showPasswordModal" class="password-modal-overlay" @click="showPasswordModal = false">
+        <div class="password-modal" @click.stop>
+          <h3>访问受限</h3>
+          <p>请输入密码以访问 "{{ currentGroupToUnlock }}" 分组</p>
+          <input
+            v-model="passwordInput"
+            type="password"
+            placeholder="Password"
+            @keyup.enter="verifyPassword"
+          />
+          <p v-if="passwordError" class="error-message">{{ passwordError }}</p>
+          <button @click="verifyPassword">确认</button>
+        </div>
+      </div>
+    </Transition>
+    <!-- Tooltip -->
+    <Transition name="fade">
+      <div
+        v-if="tooltip.visible"
+        class="tooltip"
+        :style="tooltip.style"
+      >
+        {{ tooltip.content }}
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, defineAsyncComponent } from "vue";
 import { Icon } from "@vicons/utils";
 // 可前往 https://www.xicons.org 自行挑选并在此处引入
-import {
-  Blog,
-  CompactDisc,
-  Edge,
-  Magic,
-  Atom,
-  Fire,
-  Signature,
-  LaptopCode,
-  Asterisk,
-  AddressCardRegular,
-} from "@vicons/fa"; // 注意使用正确的类别
 import { Close, Apps, EllipsisHorizontal } from "@vicons/ionicons5";
 import { mainStore } from "@/store";
 import { Swiper, SwiperSlide } from "swiper/vue";
@@ -121,11 +149,43 @@ import { Pagination, Mousewheel } from "swiper/modules";
 import homeSiteLinksFromFile from "@/assets/siteLinks.json";
 import allSiteLinksFromFile from "@/assets/allSiteLinks.json";
 
+// 动态图标解析
+const siteIcon = new Proxy({}, {
+  get(target, name) {
+    if (name in target) return target[name];
+    if (typeof name === 'string' && !name.startsWith('__') && name !== 'prototype') {
+      const component = defineAsyncComponent(() =>
+        import('@vicons/fa').then(m => m[name])
+      );
+      target[name] = component;
+      return component;
+    }
+  }
+});
+
 const store = mainStore();
 const showAllSites = ref(false);
 const homeSiteLinks = ref([]);
 const allSiteLinks = ref({});
 const activeTab = ref("");
+
+// Password Protection State
+const protectedGroups = ["个人", "DEMO"];
+const unlockedGroups = ref([]);
+const showPasswordModal = ref(false);
+const passwordInput = ref("");
+const passwordError = ref("");
+const currentGroupToUnlock = ref("");
+
+// Tooltip State
+const tooltip = ref({
+  visible: false,
+  content: "",
+  style: {
+    top: "0px",
+    left: "0px",
+  },
+});
 
 // NocoDB 数据处理
 onMounted(async () => {
@@ -168,6 +228,8 @@ onMounted(async () => {
           name: item.name,
           link: item.link,
           icon: item.icon,
+          status: item.status,
+          description: item.description, // <-- Add description field
         });
       });
       allSiteLinks.value = formattedLinks;
@@ -196,26 +258,66 @@ const siteLinksList = computed(() => {
   return result;
 });
 
-// 网站链接图标
-const siteIcon = {
-  Blog,
-  Edge,
-  CompactDisc,
-  Signature,
-  Magic,
-  Atom,
-  Fire,
-  LaptopCode,
-  Asterisk,
-  AddressCardRegular,
-};
-
 // 链接跳转
 const jumpLink = (data) => {
   if (data.name === "音乐" && store.musicClick) {
     if (typeof $openList === "function") $openList();
   } else {
     window.open(data.link, "_blank");
+  }
+};
+
+// Tooltip Handlers
+const showTooltip = (event, item) => {
+  if (item.description) {
+    tooltip.value.visible = true;
+    tooltip.value.content = item.description;
+    // Position tooltip near the cursor
+    tooltip.value.style.top = `${event.clientY + 15}px`;
+    tooltip.value.style.left = `${event.clientX + 15}px`;
+  }
+};
+
+const hideTooltip = () => {
+  tooltip.value.visible = false;
+};
+
+// Password Protection Handlers
+const handleTabClick = (tab) => {
+  if (protectedGroups.includes(tab) && !unlockedGroups.value.includes(tab)) {
+    currentGroupToUnlock.value = tab;
+    passwordInput.value = "";
+    passwordError.value = "";
+    showPasswordModal.value = true;
+  } else {
+    activeTab.value = tab;
+  }
+};
+
+const verifyPassword = async () => {
+  if (!passwordInput.value) {
+    passwordError.value = "请输入密码";
+    return;
+  }
+  try {
+    const response = await fetch("/api/verifyPassword", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ password: passwordInput.value }),
+    });
+    const data = await response.json();
+    if (response.ok && data.success) {
+      unlockedGroups.value.push(currentGroupToUnlock.value);
+      activeTab.value = currentGroupToUnlock.value;
+      showPasswordModal.value = false;
+    } else {
+      passwordError.value = data.error || "密码错误";
+    }
+  } catch (error) {
+    console.error("Password verification failed:", error);
+    passwordError.value = "验证时发生错误";
   }
 };
 </script>
@@ -297,6 +399,31 @@ const jumpLink = (data) => {
       justify-content: center;
       padding: 0 10px;
       animation: fade 0.5s;
+      position: relative; // For status badge positioning
+
+      .status-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+
+        &.status-online {
+          background-color: #64FFDA;
+          box-shadow: 0 0 5px #64FFDA;
+          animation: glow 1.5s infinite alternate;
+        }
+
+        &.status-down {
+          background-color: #FF6B6B;
+        }
+
+        &.status-maintenance {
+          background-color: #FFD166;
+        }
+      }
 
       &:hover {
         transform: scale(1.02);
@@ -483,6 +610,116 @@ const jumpLink = (data) => {
   }
 }
 
+.locked-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #ffffff80;
+  text-align: center;
+  p {
+    margin-top: 1rem;
+    font-size: 1.2rem;
+  }
+}
+
+.password-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.password-modal {
+  background-color: rgba(10, 25, 47, 0.9);
+  border: 1px solid #64FFDA;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(100, 255, 218, 0.3);
+  animation: zoom-in 0.3s forwards;
+
+  h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #fff;
+  }
+
+  p {
+    margin-bottom: 1.5rem;
+    color: #ffffffb3;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #ffffff60;
+    background-color: #ffffff10;
+    color: #fff;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    transition: all 0.3s;
+
+    &:focus {
+      outline: none;
+      border-color: #64FFDA;
+      box-shadow: 0 0 10px rgba(100, 255, 218, 0.5);
+    }
+  }
+
+  .error-message {
+    color: #FF6B6B;
+    margin-bottom: 1rem;
+    min-height: 1.2em;
+  }
+
+  button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    background-color: #64FFDA;
+    color: #0A192F;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+
+    &:hover {
+      background-color: #fff;
+      box-shadow: 0 0 15px #64FFDA;
+    }
+  }
+}
+
+.tooltip {
+  position: fixed;
+  padding: 10px 15px;
+  background-color: rgba(10, 25, 47, 0.85);
+  border: 1px solid #64FFDA;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 999;
+  max-width: 300px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  transition: opacity 0.3s ease;
+}
+
 @keyframes zoom-in {
   from {
     transform: scale(0.95);
@@ -491,6 +728,15 @@ const jumpLink = (data) => {
   to {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 3px #64FFDA;
+  }
+  to {
+    box-shadow: 0 0 8px #64FFDA, 0 0 12px #64FFDA;
   }
 }
 </style>
